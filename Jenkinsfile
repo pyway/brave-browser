@@ -21,6 +21,8 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'brave-builds-github-token-for-pr-builder', usernameVariable: 'PR_BUILDER_USER', passwordVariable: 'PR_BUILDER_TOKEN')]) {
                     echo JOB_NAME
                     echo JOB_BASE_NAME
+                    echo GITHUB_URL
+                    echo GIT_URL
                     setEnv()
                 }
             }
