@@ -19,9 +19,7 @@ pipeline {
         stage('env') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'brave-builds-github-token-for-pr-builder', usernameVariable: 'PR_BUILDER_USER', passwordVariable: 'PR_BUILDER_TOKEN')]) {
-                    echo CHANGE_BRANCH
-                    echo JOB_BASE_NAME
-                    setEnv('brave-browser', 'brave-core')
+                    setEnv()
                 }
             }
         }
@@ -48,7 +46,7 @@ pipeline {
                         }
                     }
                     else {
-                        startBraveBrowserBuild('brave-core')
+                        startBraveBrowserBuild()
                     }
                 }
             }
@@ -56,10 +54,11 @@ pipeline {
     }
 }
 
-def setEnv(repo, otherRepo) {
+def setEnv() {
     GITHUB_API = 'https://api.github.com/repos/brave'
-    def prDetails = readJSON(text: httpRequest(url: GITHUB_API + '/' + repo + '/pulls?head=brave:' + CHANGE_BRANCH, customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).content)[0]
-    OTHER_PR_DETAILS = ''
+    REPO = JOB_NAME.replace('-build-pr', '')
+    OTHER_REPO = REPO.equals('brave-browser') ? 'brave-core' : 'brave-browser'
+    def prDetails = readJSON(text: httpRequest(url: GITHUB_API + '/' + REPO + '/pulls?head=brave:' + CHANGE_BRANCH, customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).content)[0]
     SKIP = prDetails.draft.equals(true) || prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip') }.equals(1)
     SKIP_ANDROID = prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip-android') }.equals(1)
     SKIP_IOS = prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip-ios') }.equals(1)
@@ -67,9 +66,10 @@ def setEnv(repo, otherRepo) {
     SKIP_MACOS = prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip-macos') }.equals(1)
     SKIP_WINDOWS = prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip-windows') }.equals(1)
     RUN_NETWORK_AUDIT = prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/run-network-audit') }.equals(1)
-    def branchExistsInOtherRepo = httpRequest(url: GITHUB_API + '/' + otherRepo + '/branches/' + CHANGE_BRANCH, validResponseCodes: '100:499', customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).status.equals(200)
+    OTHER_PR_DETAILS = ''
+    def branchExistsInOtherRepo = httpRequest(url: GITHUB_API + '/' + OTHER_REPO + '/branches/' + CHANGE_BRANCH, validResponseCodes: '100:499', customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).status.equals(200)
     if (branchExistsInOtherRepo) {
-        OTHER_PR_DETAILS = readJSON(text: httpRequest(url: GITHUB_API + '/' + otherRepo + '/pulls?head=brave:' + CHANGE_BRANCH, customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).content)[0]
+        OTHER_PR_DETAILS = readJSON(text: httpRequest(url: GITHUB_API + '/' + OTHER_REPO + '/pulls?head=brave:' + CHANGE_BRANCH, customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).content)[0]
         if (OTHER_PR_DETAILS) {
             SKIP = SKIP || OTHER_PR_DETAILS.draft.equals(true) || OTHER_PR_DETAILS.labels.count { label -> label.name.equalsIgnoreCase('CI/skip') }.equals(1)
             SKIP_ANDROID = SKIP_ANDROID || OTHER_PR_DETAILS.labels.count { label -> label.name.equalsIgnoreCase('CI/skip-android') }.equals(1)
@@ -112,7 +112,7 @@ def checkAndAbortBuild() {
     }
 }
 
-def startBraveBrowserBuild(otherRepo) {
+def startBraveBrowserBuild() {
     PIPELINE_NAME = 'pr-brave-browser-' + CHANGE_BRANCH.replace('/', '-')
     jobDsl(scriptText: '''
         pipelineJob('${PIPELINE_NAME}') {
@@ -168,6 +168,6 @@ def startBraveBrowserBuild(otherRepo) {
     ]
     currentBuild.result = build(job: PIPELINE_NAME, parameters: params, propagate: false).result
     if (OTHER_PR_DETAILS) {
-        build(job: otherRepo + '-build-pr/PR-' + OTHER_PR_DETAILS.number, parameters: [string(name: 'BUILD_STATUS', value: currentBuild.result)], propagate: false)
+        build(job: OTHER_REPO + '-build-pr/PR-' + OTHER_PR_DETAILS.number, parameters: [string(name: 'BUILD_STATUS', value: currentBuild.result)], propagate: false)
     }
 }
