@@ -21,7 +21,7 @@ pipeline {
                 withCredentials([usernamePassword(credentialsId: 'brave-builds-github-token-for-pr-builder', usernameVariable: 'PR_BUILDER_USER', passwordVariable: 'PR_BUILDER_TOKEN')]) {
                     echo CHANGE_BRANCH
                     echo JOB_BASE_NAME
-                    setEnv(repo: 'brave-browser', otherRepo: 'brave-core')
+                    setEnv('brave-browser', 'brave-core')
                 }
             }
         }
@@ -48,7 +48,7 @@ pipeline {
                         }
                     }
                     else {
-                        startBraveBrowserBuild(otherRepo: 'brave-core')
+                        startBraveBrowserBuild('brave-core')
                     }
                 }
             }
