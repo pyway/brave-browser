@@ -114,7 +114,7 @@ def checkAndAbortBuild() {
 
 def startBraveBrowserBuild() {
     PIPELINE_NAME = 'pr-brave-browser-' + CHANGE_BRANCH.replace('/', '-')
-    jobDsl(scriptText: '''
+    jobDsl(scriptText: """
         pipelineJob('${PIPELINE_NAME}') {
             // this list has to match the parameters in the Jenkinsfile from devops repo
             parameters {
@@ -149,7 +149,7 @@ def startBraveBrowserBuild() {
                 }
             }
         }
-    ''')
+    """)
     params = [
         string(name: 'CHANNEL', value: params.CHANNEL),
         string(name: 'BUILD_TYPE', value: params.BUILD_TYPE),
