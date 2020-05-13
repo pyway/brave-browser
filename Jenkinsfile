@@ -19,10 +19,6 @@ pipeline {
         stage('env') {
             steps {
                 withCredentials([usernamePassword(credentialsId: 'brave-builds-github-token-for-pr-builder', usernameVariable: 'PR_BUILDER_USER', passwordVariable: 'PR_BUILDER_TOKEN')]) {
-                    echo JOB_NAME
-                    echo JOB_BASE_NAME
-                    echo GITHUB_URL
-                    echo GIT_URL
                     setEnv()
                 }
             }
@@ -60,7 +56,7 @@ pipeline {
 
 def setEnv() {
     GITHUB_API = 'https://api.github.com/repos/brave'
-    REPO = JOB_NAME.replace('-build-pr', '')
+    REPO = JOB_NAME.substring(0, JOB_NAME.indexOf('-build-pr'))
     OTHER_REPO = REPO.equals('brave-browser') ? 'brave-core' : 'brave-browser'
     def prDetails = readJSON(text: httpRequest(url: GITHUB_API + '/' + REPO + '/pulls?head=brave:' + CHANGE_BRANCH, customHeaders: [[name: 'Authorization', value: 'token ' + PR_BUILDER_TOKEN]]).content)[0]
     SKIP = prDetails.draft.equals(true) || prDetails.labels.count { label -> label.name.equalsIgnoreCase('CI/skip') }.equals(1)
