@@ -131,7 +131,7 @@ def startBraveBrowserBuild() {
                 booleanParam('SKIP_LINUX', false)
                 booleanParam('SKIP_MACOS', false)
                 booleanParam('SKIP_WINDOWS', false)
-                stringParam('BRANCH', 'master')
+                stringParam('BRANCH', '${CHANGE_BRANCH}')
             }
             definition {
                 cpsScm {
